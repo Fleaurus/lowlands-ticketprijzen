@@ -146,7 +146,7 @@
         <div class="stat-card">
           <div class="stat-label">Tickets beschikbaar</div>
           <div class="stat-value">${latest.totalTickets}</div>
-          ${deltaParts.length ? `<div class="stat-sub">${deltaParts.join(' · ')}</div>` : ''}
+          <div class="stat-sub">in ${latest.totalListings} listing${latest.totalListings === 1 ? '' : 's'}${deltaParts.length ? ' · ' + deltaParts.join(' · ') : ''}</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Goedkoopste ooit gezien</div>
