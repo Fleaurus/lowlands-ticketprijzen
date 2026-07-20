@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8" />
-<title>Lowlands 2026 – Doorverkoopprijs tracker</title>
+<title>🎪 LowPrice-tickets 2026</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
@@ -15,7 +15,7 @@
     margin: 0 auto;
     padding: 24px 16px 60px;
   }
-  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  h1 { font-size: 2.2rem; margin-bottom: 4px; }
   .subtitle { color: #999; margin-bottom: 16px; font-size: 0.9rem; }
   .banner {
     background: linear-gradient(135deg, rgba(74,222,128,0.16), rgba(74,222,128,0.04));
@@ -40,8 +40,10 @@
     flex: 1; min-width: 130px;
   }
   .stat-label { color: #999; font-size: 0.75rem; text-transform: uppercase; letter-spacing: .04em; }
+  .stat-label.expensive { color: #f87171; }
   .stat-value { font-size: 1.5rem; font-weight: 600; margin-top: 4px; }
   .stat-value.cheap { color: #4ade80; }
+  .stat-value.expensive { color: #f87171; }
   .stat-sub { color: #888; font-size: 0.75rem; margin-top: 4px; }
   .chart-container {
     position: relative; height: 280px;
@@ -61,10 +63,8 @@
 </style>
 </head>
 <body>
-  <h1>Lowlands 2026 — Doorverkoopprijs tracker</h1>
-  <p class="subtitle">
-    <a href="https://www.ticketmaster.nl/event/lowlands-2026-festivalticket-tickets/1050736969" target="_blank">Koop snel je kaartje!</a>
-  </p>
+  <h1>🎪 LowPrice-tickets 2026</h1>
+  <p class="subtitle">Hoe duur zijn de tickets voor Lowlands 2026?</p>
 
   <div class="banner" id="banner"></div>
   <div class="stats" id="stats"></div>
@@ -136,8 +136,8 @@
           <div class="stat-value cheap">${latest.lowest !== null ? '€ ' + latest.lowest.toFixed(2) : '–'}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Hoogste nu</div>
-          <div class="stat-value">${latest.highest !== null ? '€ ' + latest.highest.toFixed(2) : '–'}</div>
+          <div class="stat-label expensive">Hoogste nu</div>
+          <div class="stat-value expensive">${latest.highest !== null ? '€ ' + latest.highest.toFixed(2) : '–'}</div>
         </div>
         <div class="stat-card">
           <div class="stat-label">Gemiddelde prijs</div>
@@ -149,7 +149,7 @@
           <div class="stat-sub">in ${latest.totalListings} listing${latest.totalListings === 1 ? '' : 's'}${deltaParts.length ? ' · ' + deltaParts.join(' · ') : ''}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Goedkoopste ooit gezien</div>
+          <div class="stat-label">Goedkoopste tot nu toe🤑</div>
           <div class="stat-value cheap">${cheapestEver !== null ? '€ ' + cheapestEver.toFixed(2) : '–'}</div>
         </div>
       `;
