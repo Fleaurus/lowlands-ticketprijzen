@@ -40,7 +40,7 @@
     .stats { gap: 10px; }
     .stat-card { min-width: 44%; padding: 10px 12px; }
     .stat-value { font-size: 1.25rem; }
-    .chart-container { height: 220px; padding: 8px 6px 2px; }
+    .chart-container { height: 280px; padding: 10px 6px 4px; }
   }
 </style>
 </head>
@@ -58,7 +58,7 @@
 
   <script>
     async function load() {
-      const res = await fetch('data.json?_=' + Date.now());
+      const res = await fetch('data.json?_=' + Date.now(), { cache: 'no-store' });
       const data = await res.json();
       const points = data.points || [];
 
@@ -71,7 +71,9 @@
       const allLowest = points.map(p => p.lowest).filter(v => v !== null);
       const cheapestEver = allLowest.length ? Math.min(...allLowest) : null;
       const isMobile = window.innerWidth < 600;
-      const labels = points.map(p => new Date(p.timestamp).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }));
+      const labels = points.map(p => isMobile
+        ? new Date(p.timestamp).toLocaleString('nl-NL', { hour: '2-digit', minute: '2-digit' })
+        : new Date(p.timestamp).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }));
 
       document.getElementById('stats').innerHTML = `
         <div class="stat-card">
@@ -135,11 +137,20 @@
           plugins: {
             legend: {
               position: 'bottom',
-              labels: { color: '#ccc', boxWidth: 12, font: { size: isMobile ? 11 : 12 } },
+              labels: { color: '#ccc', boxWidth: 10, font: { size: isMobile ? 10 : 12 }, padding: isMobile ? 8 : 10 },
             },
           },
           scales: {
-            x: { ticks: { color: '#888', maxTicksLimit: isMobile ? 4 : 10 }, grid: { color: '#222' } },
+            x: {
+              ticks: {
+                color: '#888',
+                maxTicksLimit: isMobile ? 4 : 10,
+                maxRotation: 0,
+                minRotation: 0,
+                font: { size: isMobile ? 10 : 12 },
+              },
+              grid: { color: '#222' },
+            },
             y: { ticks: { color: '#888' }, grid: { color: '#222' } },
           },
         },
@@ -168,11 +179,20 @@
           plugins: {
             legend: {
               position: 'bottom',
-              labels: { color: '#ccc', boxWidth: 12, font: { size: isMobile ? 11 : 12 } },
+              labels: { color: '#ccc', boxWidth: 10, font: { size: isMobile ? 10 : 12 }, padding: isMobile ? 8 : 10 },
             },
           },
           scales: {
-            x: { ticks: { color: '#888', maxTicksLimit: isMobile ? 4 : 10 }, grid: { color: '#222' } },
+            x: {
+              ticks: {
+                color: '#888',
+                maxTicksLimit: isMobile ? 4 : 10,
+                maxRotation: 0,
+                minRotation: 0,
+                font: { size: isMobile ? 10 : 12 },
+              },
+              grid: { color: '#222' },
+            },
             y: { ticks: { color: '#888' }, grid: { color: '#222' }, beginAtZero: true },
           },
         },
