@@ -22,17 +22,6 @@ function log(msg) {
   console.log(`[scrape] ${msg}`);
 }
 
-async function dismissCookieBanner(page) {
-  try {
-    const rejectBtn = page.getByRole('button', { name: 'Alles afwijzen', exact: true });
-    await rejectBtn.waitFor({ state: 'visible', timeout: 8000 });
-    await rejectBtn.click();
-    log('Cookiebanner weggeklikt.');
-  } catch {
-    log('Geen cookiebanner gevonden (of al weggeklikt).');
-  }
-}
-
 async function extractListings(page) {
   // Wacht tot er minstens één ticketblokje geladen is (of geef na een tijdje op
   // als er simpelweg geen doorverkooptickets beschikbaar zijn).
@@ -108,7 +97,6 @@ async function main() {
 
   log(`Navigeren naar ${CONFIG.URL}`);
   await page.goto(CONFIG.URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-  await dismissCookieBanner(page);
 
   const listings = await extractListings(page);
   await browser.close();
