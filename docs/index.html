@@ -16,7 +16,22 @@
     padding: 24px 16px 60px;
   }
   h1 { font-size: 1.4rem; margin-bottom: 4px; }
-  .subtitle { color: #999; margin-bottom: 24px; font-size: 0.9rem; }
+  .subtitle { color: #999; margin-bottom: 16px; font-size: 0.9rem; }
+  .banner {
+    background: linear-gradient(135deg, rgba(74,222,128,0.16), rgba(74,222,128,0.04));
+    border: 1px solid rgba(74,222,128,0.35);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+  .banner.sold-out {
+    background: rgba(248,113,113,0.08);
+    border-color: rgba(248,113,113,0.3);
+  }
+  .banner a { color: #4ade80; font-weight: 600; }
+  .banner.sold-out a { color: #f87171; }
   .stats {
     display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px;
   }
@@ -27,6 +42,7 @@
   .stat-label { color: #999; font-size: 0.75rem; text-transform: uppercase; letter-spacing: .04em; }
   .stat-value { font-size: 1.5rem; font-weight: 600; margin-top: 4px; }
   .stat-value.cheap { color: #4ade80; }
+  .stat-sub { color: #888; font-size: 0.75rem; margin-top: 4px; }
   .chart-container {
     position: relative; height: 280px;
     background: #111; border-radius: 10px; padding: 10px 10px 4px;
@@ -47,16 +63,28 @@
 <body>
   <h1>Lowlands 2026 — Doorverkoopprijs tracker</h1>
   <p class="subtitle">
-    Automatisch bijgewerkt via GitHub Actions.
-    <a href="https://www.ticketmaster.nl/event/lowlands-2026-festivalticket-tickets/1050736969" target="_blank">Naar Ticketmaster →</a>
+    <a href="https://www.ticketmaster.nl/event/lowlands-2026-festivalticket-tickets/1050736969" target="_blank">Koop snel je kaartje!</a>
   </p>
 
+  <div class="banner" id="banner"></div>
   <div class="stats" id="stats"></div>
   <div class="chart-container"><canvas id="chart"></canvas></div>
   <div class="chart-container"><canvas id="ticketsChart"></canvas></div>
   <p class="updated" id="updated"></p>
 
   <script>
+    const TICKET_URL = 'https://www.ticketmaster.nl/event/lowlands-2026-festivalticket-tickets/1050736969';
+    const ORIGINAL_PRICE = 365; // reguliere ticketprijs, pas aan als Ticketmaster deze wijzigt
+
+    function closestAtOrBefore(points, targetMs) {
+      let best = null;
+      for (const p of points) {
+        const t = new Date(p.timestamp).getTime();
+        if (t <= targetMs && (!best || t > new Date(best.timestamp).getTime())) best = p;
+      }
+      return best;
+    }
+
     async function load() {
       const res = await fetch('data.json?_=' + Date.now(), { cache: 'no-store' });
       const data = await res.json();
@@ -75,6 +103,33 @@
         ? new Date(p.timestamp).toLocaleString('nl-NL', { hour: '2-digit', minute: '2-digit' })
         : new Date(p.timestamp).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }));
 
+      const bannerEl = document.getElementById('banner');
+      if (latest.lowest !== null) {
+        bannerEl.classList.remove('sold-out');
+        bannerEl.innerHTML =
+          `Lowlands is nog <strong>NIET</strong> uitverkocht. Wil je gaan, dan betaal je op dit moment ` +
+          `<strong>€ ${latest.lowest.toFixed(2)}</strong> voor een kaartje. ` +
+          `<a href="${TICKET_URL}" target="_blank">Klik hier om er ééntje te kopen 🎟️</a>`;
+      } else {
+        bannerEl.classList.add('sold-out');
+        bannerEl.innerHTML =
+          `Er zijn op dit moment geen doorverkooptickets gevonden. ` +
+          `<a href="${TICKET_URL}" target="_blank">Check Ticketmaster →</a>`;
+      }
+
+      const latestMs = new Date(latest.timestamp).getTime();
+      const dayAgo = closestAtOrBefore(points, latestMs - 24 * 60 * 60 * 1000);
+      const threeDaysAgo = closestAtOrBefore(points, latestMs - 3 * 24 * 60 * 60 * 1000);
+      const deltaParts = [];
+      if (dayAgo) {
+        const diff = latest.totalTickets - dayAgo.totalTickets;
+        deltaParts.push(`${diff > 0 ? '+' : ''}${diff} vs gisteren`);
+      }
+      if (threeDaysAgo) {
+        const diff = latest.totalTickets - threeDaysAgo.totalTickets;
+        deltaParts.push(`${diff > 0 ? '+' : ''}${diff} vs 3 dagen geleden`);
+      }
+
       document.getElementById('stats').innerHTML = `
         <div class="stat-card">
           <div class="stat-label">Laagste nu</div>
@@ -91,12 +146,21 @@
         <div class="stat-card">
           <div class="stat-label">Tickets beschikbaar</div>
           <div class="stat-value">${latest.totalTickets}</div>
+          ${deltaParts.length ? `<div class="stat-sub">${deltaParts.join(' · ')}</div>` : ''}
         </div>
         <div class="stat-card">
           <div class="stat-label">Goedkoopste ooit gezien</div>
           <div class="stat-value cheap">${cheapestEver !== null ? '€ ' + cheapestEver.toFixed(2) : '–'}</div>
         </div>
       `;
+
+      const tooltipEuro = {
+        mode: 'index',
+        intersect: false,
+        callbacks: {
+          label: (item) => `${item.dataset.label}: € ${Number(item.parsed.y).toFixed(2)}`,
+        },
+      };
 
       const ctx = document.getElementById('chart').getContext('2d');
       new Chart(ctx, {
@@ -113,14 +177,6 @@
               pointRadius: 0,
             },
             {
-              label: 'Hoogste prijs',
-              data: points.map(p => p.highest),
-              borderColor: '#f87171',
-              backgroundColor: 'rgba(248,113,113,0.05)',
-              tension: 0.2,
-              pointRadius: 0,
-            },
-            {
               label: 'Gemiddelde prijs',
               data: points.map(p => p.average ?? null),
               borderColor: '#facc15',
@@ -129,16 +185,27 @@
               pointRadius: 0,
               borderDash: [4, 3],
             },
+            {
+              label: 'Normale prijs',
+              data: points.map(() => ORIGINAL_PRICE),
+              borderColor: 'rgba(160,160,160,0.5)',
+              borderDash: [3, 4],
+              borderWidth: 1,
+              pointRadius: 0,
+              tension: 0,
+            },
           ],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
           plugins: {
             legend: {
               position: 'bottom',
               labels: { color: '#ccc', boxWidth: 10, font: { size: isMobile ? 10 : 12 }, padding: isMobile ? 8 : 10 },
             },
+            tooltip: tooltipEuro,
           },
           scales: {
             x: {
@@ -176,6 +243,7 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
           plugins: {
             legend: {
               position: 'bottom',
