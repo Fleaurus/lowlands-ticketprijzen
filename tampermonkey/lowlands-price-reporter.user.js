@@ -200,11 +200,13 @@
     showBadge('Lowlands reporter: prijzen zoeken...', '#2563eb');
     const listings = await waitForListingsToStabilize(20000);
 
+    const totalTickets = listings.reduce((sum, l) => sum + l.count, 0);
     const point = {
       timestamp: new Date().toISOString(),
       lowest: listings.length ? Math.min(...listings.map((l) => l.price)) : null,
       highest: listings.length ? Math.max(...listings.map((l) => l.price)) : null,
-      totalTickets: listings.reduce((sum, l) => sum + l.count, 0),
+      average: totalTickets ? listings.reduce((sum, l) => sum + l.price * l.count, 0) / totalTickets : null,
+      totalTickets,
       totalListings: listings.length,
     };
     log(`Meting: ${JSON.stringify(point)}`);

@@ -129,11 +129,13 @@ async function main() {
   const history = await loadHistory();
   const timestamp = new Date().toISOString();
 
+  const totalTickets = listings.reduce((sum, l) => sum + l.count, 0);
   const point = {
     timestamp,
     lowest: listings.length ? Math.min(...listings.map((l) => l.price)) : null,
     highest: listings.length ? Math.max(...listings.map((l) => l.price)) : null,
-    totalTickets: listings.reduce((sum, l) => sum + l.count, 0),
+    average: totalTickets ? listings.reduce((sum, l) => sum + l.price * l.count, 0) / totalTickets : null,
+    totalTickets,
     totalListings: listings.length,
   };
 
