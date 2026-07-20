@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
+  *, *::before, *::after { box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: #0d0d0d;
@@ -26,9 +27,21 @@
   .stat-label { color: #999; font-size: 0.75rem; text-transform: uppercase; letter-spacing: .04em; }
   .stat-value { font-size: 1.5rem; font-weight: 600; margin-top: 4px; }
   .stat-value.cheap { color: #4ade80; }
-  canvas { background: #111; border-radius: 10px; padding: 10px; }
+  .chart-container {
+    position: relative; height: 280px;
+    background: #111; border-radius: 10px; padding: 10px 10px 4px;
+    margin-bottom: 16px; box-sizing: border-box;
+  }
   .updated { color: #666; font-size: 0.8rem; margin-top: 16px; }
   a { color: #7dd3fc; }
+
+  @media (max-width: 600px) {
+    body { padding: 16px 10px 40px; }
+    .stats { gap: 10px; }
+    .stat-card { min-width: 44%; padding: 10px 12px; }
+    .stat-value { font-size: 1.25rem; }
+    .chart-container { height: 220px; padding: 8px 6px 2px; }
+  }
 </style>
 </head>
 <body>
@@ -39,8 +52,8 @@
   </p>
 
   <div class="stats" id="stats"></div>
-  <canvas id="chart" height="110"></canvas>
-  <canvas id="ticketsChart" height="90" style="margin-top: 16px;"></canvas>
+  <div class="chart-container"><canvas id="chart"></canvas></div>
+  <div class="chart-container"><canvas id="ticketsChart"></canvas></div>
   <p class="updated" id="updated"></p>
 
   <script>
@@ -57,6 +70,8 @@
       const latest = points[points.length - 1];
       const allLowest = points.map(p => p.lowest).filter(v => v !== null);
       const cheapestEver = allLowest.length ? Math.min(...allLowest) : null;
+      const isMobile = window.innerWidth < 600;
+      const labels = points.map(p => new Date(p.timestamp).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }));
 
       document.getElementById('stats').innerHTML = `
         <div class="stat-card">
@@ -85,7 +100,7 @@
       new Chart(ctx, {
         type: 'line',
         data: {
-          labels: points.map(p => new Date(p.timestamp).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })),
+          labels,
           datasets: [
             {
               label: 'Laagste prijs',
@@ -116,11 +131,15 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           plugins: {
-            legend: { labels: { color: '#ccc' } },
+            legend: {
+              position: 'bottom',
+              labels: { color: '#ccc', boxWidth: 12, font: { size: isMobile ? 11 : 12 } },
+            },
           },
           scales: {
-            x: { ticks: { color: '#888', maxTicksLimit: 10 }, grid: { color: '#222' } },
+            x: { ticks: { color: '#888', maxTicksLimit: isMobile ? 4 : 10 }, grid: { color: '#222' } },
             y: { ticks: { color: '#888' }, grid: { color: '#222' } },
           },
         },
@@ -130,7 +149,7 @@
       new Chart(ticketsCtx, {
         type: 'line',
         data: {
-          labels: points.map(p => new Date(p.timestamp).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })),
+          labels,
           datasets: [
             {
               label: 'Tickets beschikbaar',
@@ -145,11 +164,15 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           plugins: {
-            legend: { labels: { color: '#ccc' } },
+            legend: {
+              position: 'bottom',
+              labels: { color: '#ccc', boxWidth: 12, font: { size: isMobile ? 11 : 12 } },
+            },
           },
           scales: {
-            x: { ticks: { color: '#888', maxTicksLimit: 10 }, grid: { color: '#222' } },
+            x: { ticks: { color: '#888', maxTicksLimit: isMobile ? 4 : 10 }, grid: { color: '#222' } },
             y: { ticks: { color: '#888' }, grid: { color: '#222' }, beginAtZero: true },
           },
         },
