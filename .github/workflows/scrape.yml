@@ -2,8 +2,8 @@ name: Scrape Lowlands ticket prices
 
 on:
   schedule:
-    # Elke 15 minuten. Pas de cron-expressie aan voor een andere frequentie.
-    - cron: '*/15 * * * *'
+    # Elk uur, om onopvallend te blijven voor Ticketmasters bot-detectie.
+    - cron: '0 * * * *'
   workflow_dispatch: {} # laat je 'm ook handmatig starten via de Actions-tab
 
 concurrency:
