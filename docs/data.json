@@ -230,6 +230,13 @@
       "highest": 455.52,
       "totalTickets": 778,
       "totalListings": 436
+    },
+    {
+      "timestamp": "2026-07-20T16:17:40.595Z",
+      "lowest": 317.2,
+      "highest": 455.52,
+      "totalTickets": 786,
+      "totalListings": 436
     }
   ],
   "lastNotifiedPrice": null
