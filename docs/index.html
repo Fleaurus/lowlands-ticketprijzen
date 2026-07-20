@@ -176,6 +176,7 @@
               backgroundColor: 'rgba(74,222,128,0.1)',
               tension: 0.2,
               pointRadius: 0,
+              spanGaps: true,
             },
             {
               label: 'Gemiddelde prijs',
@@ -185,6 +186,7 @@
               tension: 0.2,
               pointRadius: 0,
               borderDash: [4, 3],
+              spanGaps: true,
             },
             {
               label: 'Normale prijs',
@@ -231,13 +233,17 @@
           labels,
           datasets: [
             {
+              // Een mislukte meting (bv. even geblokkeerd) komt binnen als
+              // totalListings: 0 — dat is geen echte 0, dus behandel het als
+              // ontbrekende data in plaats van een dip naar nul te tekenen.
               label: 'Tickets beschikbaar',
-              data: points.map(p => p.totalTickets),
+              data: points.map(p => p.totalListings > 0 ? p.totalTickets : null),
               borderColor: '#7dd3fc',
               backgroundColor: 'rgba(125,211,252,0.1)',
               tension: 0.2,
               pointRadius: 0,
               fill: true,
+              spanGaps: true,
             },
           ],
         },
