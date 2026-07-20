@@ -22,7 +22,8 @@
     // Fine-grained Personal Access Token met alleen "Contents: Read and write"
     // op deze ene repo. Aanmaken via https://github.com/settings/tokens?type=beta
     GITHUB_TOKEN: 'PLAK_HIER_JE_GITHUB_TOKEN',
-    COOLDOWN_MINUTES: 10, // rapporteer niet vaker dan dit, ook niet bij meerdere tabbladen/herladingen
+    AUTO_REFRESH_MINUTES: 5, // herlaadt de pagina automatisch met dit interval
+    COOLDOWN_MINUTES: 4, // rapporteer niet vaker dan dit (moet < AUTO_REFRESH_MINUTES zijn)
     PRICE_THRESHOLD: 300,
     NTFY_TOPIC: '', // laat leeg om ntfy-meldingen uit te schakelen
     NTFY_SERVER: 'https://ntfy.sh',
@@ -46,6 +47,22 @@
     }
     badge.textContent = text;
     badge.style.background = color;
+  }
+
+  function showForceButton() {
+    if (document.getElementById('lowlands-reporter-force-btn')) return;
+    const btn = document.createElement('button');
+    btn.id = 'lowlands-reporter-force-btn';
+    btn.textContent = '🔄 Nu verversen';
+    btn.style.cssText =
+      'position:fixed;bottom:44px;right:12px;z-index:999999;padding:6px 10px;' +
+      'font:12px/1.4 sans-serif;border-radius:6px;color:#fff;background:#334155;' +
+      'border:none;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.3)';
+    btn.onclick = () => {
+      GM_setValue('forcePending', true);
+      location.reload();
+    };
+    document.body.appendChild(btn);
   }
 
   function gmRequest(options) {
@@ -169,9 +186,12 @@
       return;
     }
 
+    const forced = GM_getValue('forcePending', false);
+    if (forced) GM_setValue('forcePending', false);
+
     const lastRun = GM_getValue('lastReportTime', 0);
     const cooldownMs = CONFIG.COOLDOWN_MINUTES * 60 * 1000;
-    if (Date.now() - lastRun < cooldownMs) {
+    if (!forced && Date.now() - lastRun < cooldownMs) {
       const minsAgo = Math.round((Date.now() - lastRun) / 60000);
       showBadge(`Lowlands reporter: ${minsAgo} min geleden al gerapporteerd`, '#64748b');
       return;
@@ -216,5 +236,10 @@
     }
   }
 
+  showForceButton();
   main();
+
+  if (CONFIG.AUTO_REFRESH_MINUTES > 0) {
+    setInterval(() => location.reload(), CONFIG.AUTO_REFRESH_MINUTES * 60 * 1000);
+  }
 })();

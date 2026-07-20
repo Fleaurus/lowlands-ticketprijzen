@@ -34,11 +34,15 @@ scraper werd door Ticketmaster als bot herkend en kreeg geen listings te zien.
 - Er zit een cooldown in (standaard 10 minuten) zodat herhaalde bezoeken/herladingen niet
   voor dubbele commits zorgen.
 - `docs/index.html` leest `data.json` en tekent er een grafiek van met Chart.js.
+- Zolang je het tabblad open laat staan, herlaadt de userscript de pagina zelf elke
+  `CONFIG.AUTO_REFRESH_MINUTES` (standaard 5) en rapporteert daarna opnieuw. Rechtsonder
+  staat ook een "🔄 Nu verversen"-knop om direct te herladen en te forceren, ook binnen
+  de cooldown.
 
 ## Beperkingen
 
-- Er komt alleen een meting bij wanneer jij de pagina zelf bezoekt — dit is geen
-  achtergrond-monitoring. Laat de tab gerust vaker open/herladen als je vaker wil meten.
+- Er komt alleen een meting bij zolang jij de pagina open hebt staan (of via de
+  "Nu verversen"-knop) — dit is geen achtergrond-monitoring zonder open tabblad.
 - `.github/workflows/scrape.yml` (de oude headless-Playwright-aanpak) staat nog in de
   repo als handmatige noodgreep via de Actions-tab, maar gaf structureel "0 listings"
   terug omdat Ticketmaster geautomatiseerde browsers herkent en blokkeert, ongeacht
