@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8" />
-<title>🎪 LowPrice-tickets 2026</title>
+<title>🎪 LLowPrice-tickets 2026</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
@@ -41,6 +41,7 @@
   }
   .stat-label { color: #999; font-size: 0.75rem; text-transform: uppercase; letter-spacing: .04em; }
   .stat-label.expensive { color: #f87171; }
+  .stat-label.cheap { color: #4ade80; }
   .stat-value { font-size: 1.5rem; font-weight: 600; margin-top: 4px; }
   .stat-value.cheap { color: #4ade80; }
   .stat-value.expensive { color: #f87171; }
@@ -63,7 +64,7 @@
 </style>
 </head>
 <body>
-  <h1>🎪 LowPrice-tickets 2026</h1>
+  <h1>🎪 LLowPrice-tickets 2026</h1>
   <p class="subtitle">Hoe duur zijn de tickets voor Lowlands 2026?</p>
 
   <div class="banner" id="banner"></div>
@@ -108,7 +109,7 @@
         bannerEl.classList.remove('sold-out');
         bannerEl.innerHTML =
           `Lowlands is nog <strong>NIET</strong> uitverkocht. Wil je gaan, dan betaal je op dit moment ` +
-          `<strong>€ ${latest.lowest.toFixed(2)}</strong> voor een kaartje. ` +
+          `<strong>€ ${latest.lowest.toFixed(2)}</strong> voor een kaartje.<br>` +
           `<a href="${TICKET_URL}" target="_blank">Klik hier om er ééntje te kopen 🎟️</a>`;
       } else {
         bannerEl.classList.add('sold-out');
@@ -132,24 +133,24 @@
 
       document.getElementById('stats').innerHTML = `
         <div class="stat-card">
-          <div class="stat-label">Laagste nu</div>
+          <div class="stat-label cheap">Laagste nu 🔻</div>
           <div class="stat-value cheap">${latest.lowest !== null ? '€ ' + latest.lowest.toFixed(2) : '–'}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label expensive">Hoogste nu</div>
+          <div class="stat-label expensive">Hoogste nu 🔺</div>
           <div class="stat-value expensive">${latest.highest !== null ? '€ ' + latest.highest.toFixed(2) : '–'}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Gemiddelde prijs</div>
+          <div class="stat-label">Gemiddelde prijs ⚖️</div>
           <div class="stat-value">${latest.average != null ? '€ ' + latest.average.toFixed(2) : '–'}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Tickets beschikbaar</div>
+          <div class="stat-label">Tickets beschikbaar 🎫</div>
           <div class="stat-value">${latest.totalTickets}</div>
           <div class="stat-sub">in ${latest.totalListings} listing${latest.totalListings === 1 ? '' : 's'}${deltaParts.length ? ' · ' + deltaParts.join(' · ') : ''}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Goedkoopste tot nu toe🤑</div>
+          <div class="stat-label">Goedkoopste tot nu toe 🤑</div>
           <div class="stat-value cheap">${cheapestEver !== null ? '€ ' + cheapestEver.toFixed(2) : '–'}</div>
         </div>
       `;
