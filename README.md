@@ -1,7 +1,9 @@
 # Lowlands 2026 Doorverkoopprijs Tracker
 
-Scrapet automatisch de Ticketmaster-doorverkooppagina, houdt een prijsgeschiedenis bij,
-en toont die op een webpagina (GitHub Pages) met een grafiek.
+Houdt een prijsgeschiedenis bij van de Ticketmaster-doorverkooppagina en toont die op een
+webpagina (GitHub Pages) met een grafiek. De metingen komen van een Tampermonkey-userscript
+dat in je eigen browser draait wanneer je de ticketpagina bezoekt — een losstaande headless
+scraper werd door Ticketmaster als bot herkend en kreeg geen listings te zien.
 
 ## Installatie (eenmalig)
 
@@ -11,37 +13,44 @@ en toont die op een webpagina (GitHub Pages) met een grafiek.
 3. Ga naar **Settings → Pages** in je repo, en zet "Source" op de `main`-branch,
    map `/docs`. Sla op. Je krijgt een URL zoals
    `https://<jouw-gebruikersnaam>.github.io/lowlands-tracker/`.
-4. (Optioneel, voor ntfy-meldingen) Ga naar **Settings → Secrets and variables → Actions**,
-   en voeg een secret toe genaamd `NTFY_TOPIC` met jouw unieke ntfy-topic-naam.
-5. Ga naar de **Actions**-tab en klik op "Scrape Lowlands ticket prices" → "Run workflow"
-   om de eerste scrape handmatig te starten. Daarna draait hij vanzelf elk uur
-   (aan te passen in `.github/workflows/scrape.yml`).
+4. Maak een **fine-grained Personal Access Token** aan via
+   `https://github.com/settings/tokens?type=beta`, met toegang tot alleen deze ene
+   repository en permissie **Contents: Read and write**. Bewaar hem veilig (je ziet 'm
+   maar één keer) — dit token gaat zo in je eigen userscript, niet ergens anders.
+5. Installeer de [Tampermonkey](https://www.tampermonkey.net/)-browserextensie, en
+   installeer daarin het script uit
+   [`tampermonkey/lowlands-price-reporter.user.js`](tampermonkey/lowlands-price-reporter.user.js)
+   (Tampermonkey-dashboard → "+" → plak de inhoud van het bestand).
+6. Open het script in Tampermonkey en vul in het `CONFIG`-blok bovenin je
+   `GITHUB_TOKEN` in (en `GITHUB_OWNER`/`GITHUB_REPO` als je andere namen gebruikte).
+7. Bezoek de [Lowlands-ticketpagina](https://www.ticketmaster.nl/event/lowlands-2026-festivalticket-tickets/1050736969).
+   Rechtsonder verschijnt een balkje dat laat zien of de meting is opgeslagen.
 
 ## Wat er gebeurt
 
-- `scrape.js` opent de Ticketmaster-pagina met een headless Chrome (Playwright),
-  leest de doorverkoop-listings uit, en schrijft een meting toe aan `docs/data.json`.
-- GitHub Actions commit dat bestand automatisch terug naar de repo.
+- `tampermonkey/lowlands-price-reporter.user.js` draait in je eigen, ingelogde browser
+  zodra je de Ticketmaster-pagina opent, leest de doorverkoop-listings uit, en schrijft
+  een meting rechtstreeks naar `docs/data.json` via de GitHub API (met je eigen token).
+- Er zit een cooldown in (standaard 10 minuten) zodat herhaalde bezoeken/herladingen niet
+  voor dubbele commits zorgen.
 - `docs/index.html` leest `data.json` en tekent er een grafiek van met Chart.js.
 
 ## Beperkingen
 
-- Ticketmaster kan geautomatiseerd (datacenter-)verkeer blokkeren; standaard draait de
-  scraper daarom maar 1x per uur. Als hij regelmatig "0 listings" teruggeeft terwijl je
-  weet dat er wél tickets zijn, verlaag de frequentie dan verder in `scrape.yml`, of
-  draai de scraper vanaf je eigen netwerk in plaats van via GitHub Actions.
-- GitHub Actions cron-schema's zijn "best effort" — bij hoge drukte kan een run een
-  paar minuten later starten dan gepland.
-- Pas `CONFIG.PRICE_THRESHOLD` in `scrape.js` aan naar het bedrag waarop je een
-  ntfy-melding wil krijgen.
+- Er komt alleen een meting bij wanneer jij de pagina zelf bezoekt — dit is geen
+  achtergrond-monitoring. Laat de tab gerust vaker open/herladen als je vaker wil meten.
+- `.github/workflows/scrape.yml` (de oude headless-Playwright-aanpak) staat nog in de
+  repo als handmatige noodgreep via de Actions-tab, maar gaf structureel "0 listings"
+  terug omdat Ticketmaster geautomatiseerde browsers herkent en blokkeert, ongeacht
+  frequentie of IP.
+- Pas `CONFIG.PRICE_THRESHOLD` in de userscript aan naar het bedrag waarop je een
+  ntfy-melding wil krijgen, en vul `CONFIG.NTFY_TOPIC` in om dat te activeren.
 
-## Lokaal testen
+## Lokaal testen van de userscript-logica
 
 ```bash
-npm install
-npx playwright install --with-deps chromium
-npm run scrape
+node --check tampermonkey/lowlands-price-reporter.user.js
 ```
 
-Dit vult/update `docs/data.json`. Open `docs/index.html` lokaal in je browser
-(of gebruik `npx serve docs`) om de pagina te bekijken.
+Voor een echte test: installeer de userscript in Tampermonkey zoals hierboven, bezoek de
+ticketpagina, en controleer het balkje rechtsonder plus de Tampermonkey-console-logs.

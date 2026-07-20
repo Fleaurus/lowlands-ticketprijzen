@@ -1,10 +1,11 @@
 name: Scrape Lowlands ticket prices
 
 on:
-  schedule:
-    # Elk uur, om onopvallend te blijven voor Ticketmasters bot-detectie.
-    - cron: '0 * * * *'
-  workflow_dispatch: {} # laat je 'm ook handmatig starten via de Actions-tab
+  # Uitgeschakeld: Ticketmaster herkent de headless Playwright-browser als bot
+  # en levert dan geen listings, ongeacht frequentie of IP. De Tampermonkey-
+  # userscript (zie tampermonkey/) is nu de primaire databron. Deze workflow
+  # blijft als handmatige noodgreep staan, mocht dat ooit weer werken.
+  workflow_dispatch: {}
 
 concurrency:
   group: scrape-lowlands
