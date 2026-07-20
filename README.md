@@ -14,7 +14,7 @@ en toont die op een webpagina (GitHub Pages) met een grafiek.
 4. (Optioneel, voor ntfy-meldingen) Ga naar **Settings → Secrets and variables → Actions**,
    en voeg een secret toe genaamd `NTFY_TOPIC` met jouw unieke ntfy-topic-naam.
 5. Ga naar de **Actions**-tab en klik op "Scrape Lowlands ticket prices" → "Run workflow"
-   om de eerste scrape handmatig te starten. Daarna draait hij vanzelf elk uur
+   om de eerste scrape handmatig te starten. Daarna draait hij vanzelf elke 15 minuten
    (aan te passen in `.github/workflows/scrape.yml`).
 
 ## Wat er gebeurt
@@ -26,10 +26,10 @@ en toont die op een webpagina (GitHub Pages) met een grafiek.
 
 ## Beperkingen
 
-- Ticketmaster kan geautomatiseerd (datacenter-)verkeer blokkeren; standaard draait de
-  scraper daarom maar 1x per uur. Als hij regelmatig "0 listings" teruggeeft terwijl je
-  weet dat er wél tickets zijn, verlaag de frequentie dan verder in `scrape.yml`, of
-  draai de scraper vanaf je eigen netwerk in plaats van via GitHub Actions.
+- Ticketmaster kan geautomatiseerd (datacenter-)verkeer blokkeren. Als de scraper
+  regelmatig "0 listings" teruggeeft terwijl je weet dat er wél tickets zijn, is dat
+  waarschijnlijk de reden. Verlaag in dat geval de frequentie in `scrape.yml`
+  (bv. elke 30-60 minuten) om minder op te vallen.
 - GitHub Actions cron-schema's zijn "best effort" — bij hoge drukte kan een run een
   paar minuten later starten dan gepland.
 - Pas `CONFIG.PRICE_THRESHOLD` in `scrape.js` aan naar het bedrag waarop je een
