@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<title>Lowlands 2026 – Doorverkoopprijs tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0d0d0d;
+    color: #eee;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; }
+  .subtitle { color: #999; margin-bottom: 24px; font-size: 0.9rem; }
+  .stats {
+    display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px;
+  }
+  .stat-card {
+    background: #1a1a1a; border-radius: 10px; padding: 14px 18px;
+    flex: 1; min-width: 130px;
+  }
+  .stat-label { color: #999; font-size: 0.75rem; text-transform: uppercase; letter-spacing: .04em; }
+  .stat-value { font-size: 1.5rem; font-weight: 600; margin-top: 4px; }
+  .stat-value.cheap { color: #4ade80; }
+  canvas { background: #111; border-radius: 10px; padding: 10px; }
+  .updated { color: #666; font-size: 0.8rem; margin-top: 16px; }
+  a { color: #7dd3fc; }
+</style>
+</head>
+<body>
+  <h1>Lowlands 2026 — Doorverkoopprijs tracker</h1>
+  <p class="subtitle">
+    Automatisch bijgewerkt via GitHub Actions.
+    <a href="https://www.ticketmaster.nl/event/lowlands-2026-festivalticket-tickets/1050736969" target="_blank">Naar Ticketmaster →</a>
+  </p>
+
+  <div class="stats" id="stats"></div>
+  <canvas id="chart" height="110"></canvas>
+  <p class="updated" id="updated"></p>
+
+  <script>
+    async function load() {
+      const res = await fetch('data.json?_=' + Date.now());
+      const data = await res.json();
+      const points = data.points || [];
+
+      if (!points.length) {
+        document.getElementById('stats').innerHTML = '<p>Nog geen data. Wacht tot de eerste scrape is gedraaid.</p>';
+        return;
+      }
+
+      const latest = points[points.length - 1];
+      const allLowest = points.map(p => p.lowest).filter(v => v !== null);
+      const cheapestEver = allLowest.length ? Math.min(...allLowest) : null;
+
+      document.getElementById('stats').innerHTML = `
+        <div class="stat-card">
+          <div class="stat-label">Laagste nu</div>
+          <div class="stat-value cheap">${latest.lowest !== null ? '€ ' + latest.lowest.toFixed(2) : '–'}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Hoogste nu</div>
+          <div class="stat-value">${latest.highest !== null ? '€ ' + latest.highest.toFixed(2) : '–'}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Tickets beschikbaar</div>
+          <div class="stat-value">${latest.totalTickets}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Goedkoopste ooit gezien</div>
+          <div class="stat-value cheap">${cheapestEver !== null ? '€ ' + cheapestEver.toFixed(2) : '–'}</div>
+        </div>
+      `;
+
+      const ctx = document.getElementById('chart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: points.map(p => new Date(p.timestamp).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })),
+          datasets: [
+            {
+              label: 'Laagste prijs',
+              data: points.map(p => p.lowest),
+              borderColor: '#4ade80',
+              backgroundColor: 'rgba(74,222,128,0.1)',
+              tension: 0.2,
+              pointRadius: 0,
+            },
+            {
+              label: 'Hoogste prijs',
+              data: points.map(p => p.highest),
+              borderColor: '#f87171',
+              backgroundColor: 'rgba(248,113,113,0.05)',
+              tension: 0.2,
+              pointRadius: 0,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { labels: { color: '#ccc' } },
+          },
+          scales: {
+            x: { ticks: { color: '#888', maxTicksLimit: 10 }, grid: { color: '#222' } },
+            y: { ticks: { color: '#888' }, grid: { color: '#222' } },
+          },
+        },
+      });
+
+      document.getElementById('updated').textContent =
+        'Laatste meting: ' + new Date(latest.timestamp).toLocaleString('nl-NL');
+    }
+
+    load().catch(err => {
+      document.getElementById('stats').innerHTML = '<p>Kon data.json niet laden: ' + err.message + '</p>';
+    });
+  </script>
+</body>
+</html>

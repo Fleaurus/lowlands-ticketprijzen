@@ -1,0 +1,12 @@
+{
+  "name": "lowlands-ticket-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "scrape": "node scrape.js"
+  },
+  "dependencies": {
+    "playwright": "^1.47.0"
+  }
+}
