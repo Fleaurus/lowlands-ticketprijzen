@@ -22,19 +22,44 @@ function log(msg) {
   console.log(`[scrape] ${msg}`);
 }
 
+function countResaleNodes(nodes) {
+  return nodes.filter((n) => (n.innerText || '').includes('Verified Resale Ticket')).length;
+}
+
+async function waitForListingsToStabilize(page, { timeoutMs = 20000, stabilizeMs = 1500, pollMs = 500 } = {}) {
+  // De hoofdwidget (het reguliere ticket, bv. "Regulier € 365,00 per stuk") deelt
+  // dezelfde data-testid als de doorverkoop-listings, en verschijnt eerder. Wachten
+  // tot het aantal "Verified Resale Ticket"-blokjes even niet meer verandert, in
+  // plaats van te stoppen zodra er één blokje is, voorkomt dat we alleen die
+  // hoofdwidget te zien krijgen terwijl de listings daaronder nog laden.
+  const start = Date.now();
+  let lastCount = -1;
+  let lastChangeAt = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const count = await page.$$eval('[data-testid="ticketTypeInfo"]', countResaleNodes);
+    if (count !== lastCount) {
+      lastCount = count;
+      lastChangeAt = Date.now();
+    } else if (Date.now() - lastChangeAt >= stabilizeMs) {
+      break;
+    }
+    await page.waitForTimeout(pollMs);
+  }
+  return lastCount;
+}
+
 async function extractListings(page) {
-  // Wacht tot er minstens één ticketblokje geladen is (of geef na een tijdje op
-  // als er simpelweg geen doorverkooptickets beschikbaar zijn).
-  try {
-    await page.waitForSelector('[data-testid="ticketTypeInfo"]', { timeout: 15000 });
-  } catch {
-    log('Geen ticketTypeInfo-elementen gevonden binnen 15s (mogelijk uitverkocht of geblokkeerd).');
+  const stableCount = await waitForListingsToStabilize(page);
+  if (stableCount <= 0) {
+    log('Geen "Verified Resale Ticket"-listings gevonden (mogelijk uitverkocht of geblokkeerd).');
   }
 
   return page.$$eval('[data-testid="ticketTypeInfo"]', (nodes) => {
     const results = [];
     for (const node of nodes) {
       const text = node.innerText || node.textContent || '';
+      if (!text.includes('Verified Resale Ticket')) continue;
+
       const priceMatch = text.match(/€\s*([\d.,]+)\s*per stuk/i);
       if (!priceMatch) continue;
       const normalized = priceMatch[1].replace(/\./g, '').replace(',', '.');

@@ -64,6 +64,11 @@
     const results = [];
     for (const node of nodes) {
       const text = node.innerText || node.textContent || '';
+      // De hoofdwidget (het reguliere ticket, bv. "Regulier € 365,00 per stuk") deelt
+      // dezelfde data-testid als de doorverkoop-listings; alleen de listings zelf
+      // bevatten deze tekst, dus dat is hoe we ze onderscheiden.
+      if (!text.includes('Verified Resale Ticket')) continue;
+
       const priceMatch = text.match(/€\s*([\d.,]+)\s*per stuk/i);
       if (!priceMatch) continue;
       const normalized = priceMatch[1].replace(/\./g, '').replace(',', '.');
@@ -78,13 +83,22 @@
     return results;
   }
 
-  function waitForListings(timeoutMs) {
+  function waitForListingsToStabilize(timeoutMs) {
+    // Wacht tot het aantal gevonden listings even niet meer verandert, in plaats
+    // van te stoppen zodra er één is - de resale-lijst laadt geleidelijk.
     return new Promise((resolve) => {
       const start = Date.now();
+      const stabilizeMs = 1500;
+      let lastCount = -1;
+      let lastChangeAt = Date.now();
       const check = () => {
         const listings = extractListings();
         const timedOut = Date.now() - start > timeoutMs;
-        if (listings.length > 0 || timedOut) {
+        if (listings.length !== lastCount) {
+          lastCount = listings.length;
+          lastChangeAt = Date.now();
+        }
+        if (timedOut || (lastCount >= 0 && Date.now() - lastChangeAt >= stabilizeMs)) {
           resolve(listings);
         } else {
           setTimeout(check, 500);
@@ -164,7 +178,7 @@
     }
 
     showBadge('Lowlands reporter: prijzen zoeken...', '#2563eb');
-    const listings = await waitForListings(15000);
+    const listings = await waitForListingsToStabilize(20000);
 
     const point = {
       timestamp: new Date().toISOString(),
