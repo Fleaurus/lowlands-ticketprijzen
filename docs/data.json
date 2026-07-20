@@ -6,6 +6,13 @@
       "highest": null,
       "totalTickets": 0,
       "totalListings": 0
+    },
+    {
+      "timestamp": "2026-07-20T12:31:49.521Z",
+      "lowest": 365,
+      "highest": 365,
+      "totalTickets": 1,
+      "totalListings": 1
     }
   ],
   "lastNotifiedPrice": null
