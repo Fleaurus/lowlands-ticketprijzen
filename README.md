@@ -50,6 +50,18 @@ scraper werd door Ticketmaster als bot herkend en kreeg geen listings te zien.
 - Pas `CONFIG.PRICE_THRESHOLD` in de userscript aan naar het bedrag waarop je een
   ntfy-melding wil krijgen, en vul `CONFIG.NTFY_TOPIC` in om dat te activeren.
 
+## Bezoekersstatistieken (optioneel)
+
+`docs/index.html` bevat een [GoatCounter](https://www.goatcounter.com/)-scriptje (gratis,
+geen cookies, geen consent-banner nodig):
+
+1. Maak gratis een account aan op <https://www.goatcounter.com/signup> en kies een site-code
+   (bv. `lowlands-tracker` → `lowlands-tracker.goatcounter.com`).
+2. Vervang in `docs/index.html` `PLAK_HIER_JE_GOATCOUNTER_CODE` door die site-code.
+3. Bezoekersaantallen zie je terug op `https://<jouw-site-code>.goatcounter.com`.
+
+Zonder deze stap doet het scriptje niets (het telt gewoon niet mee, breekt de pagina niet).
+
 ## Lokaal testen van de userscript-logica
 
 ```bash
