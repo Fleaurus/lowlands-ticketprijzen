@@ -3047,6 +3047,14 @@
       "average": 357.6414429109164,
       "totalTickets": 797,
       "totalListings": 450
+    },
+    {
+      "timestamp": "2026-07-22T15:03:36.068Z",
+      "lowest": 322.4,
+      "highest": 455.52,
+      "average": 357.6414429109164,
+      "totalTickets": 797,
+      "totalListings": 450
     }
   ],
   "lastNotifiedPrice": null
