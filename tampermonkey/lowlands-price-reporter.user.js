@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Lowlands 2026 Doorverkoopprijs Reporter
 // @namespace    lowlands-ticket-tracker
-// @version      2.0.0
-// @description  Leest doorverkoopprijzen uit op de Ticketmaster-paginabezoek en stuurt een meting naar de Festileaks Ticket Watch-pagina.
+// @version      1.0.0
+// @description  Leest doorverkoopprijzen uit op de Ticketmaster-paginabezoek en schrijft een meting naar docs/data.json in je GitHub-repo.
 // @match        https://www.ticketmaster.nl/event/lowlands-2026-festivalticket-tickets/1050736969*
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
 // @grant        GM_getValue
-// @connect      festileaks.com
+// @connect      api.github.com
+// @connect      ntfy.sh
 // ==/UserScript==
 
 (function () {
@@ -15,11 +16,18 @@
 
   // ======================= CONFIG - PAS DIT AAN =======================
   const CONFIG = {
-    REPORT_URL: 'https://festileaks.com/wp-content/themes/festileaks/ticketwatch-report.php',
-    // Zelfde secret als REPORT_SECRET in ticketwatch-report.php.
-    REPORT_SECRET: 'RIJlyg3UdcYTmWc0sZZ1k1o9PN1YhVMx_kGWCfGqROk',
+    GITHUB_OWNER: 'Fleaurus',
+    GITHUB_REPO: 'lowlands-ticketprijzen',
+    DATA_PATH: 'docs/data.json',
+    // Fine-grained Personal Access Token met alleen "Contents: Read and write"
+    // op deze ene repo. Aanmaken via https://github.com/settings/tokens?type=beta
+    GITHUB_TOKEN: 'PLAK_HIER_JE_GITHUB_TOKEN',
     AUTO_REFRESH_MINUTES: 5, // herlaadt de pagina automatisch met dit interval
     COOLDOWN_MINUTES: 4, // rapporteer niet vaker dan dit (moet < AUTO_REFRESH_MINUTES zijn)
+    PRICE_THRESHOLD: 300,
+    NTFY_TOPIC: '', // laat leeg om ntfy-meldingen uit te schakelen
+    NTFY_SERVER: 'https://ntfy.sh',
+    MAX_HISTORY_POINTS: 2000,
   };
   // ======================================================================
 
@@ -117,25 +125,64 @@
     });
   }
 
-  async function reportPoint(point) {
+  async function sendNtfyNotification(price) {
+    if (!CONFIG.NTFY_TOPIC) return;
+    try {
+      await gmRequest({
+        method: 'POST',
+        url: `${CONFIG.NTFY_SERVER}/${CONFIG.NTFY_TOPIC}`,
+        headers: { Title: 'Lowlands ticket goedkoop!', Priority: 'urgent', Tags: 'moneybag,tada' },
+        data: `Doorverkoopticket gevonden voor € ${price.toFixed(2)} (drempel: € ${CONFIG.PRICE_THRESHOLD}). Snel checken op Ticketmaster!`,
+      });
+      log('ntfy-melding verstuurd.');
+    } catch (err) {
+      log('ntfy-melding versturen mislukt: ' + err);
+    }
+  }
+
+  function githubApiUrl() {
+    return `https://api.github.com/repos/${CONFIG.GITHUB_OWNER}/${CONFIG.GITHUB_REPO}/contents/${CONFIG.DATA_PATH}`;
+  }
+
+  function githubHeaders() {
+    return {
+      Authorization: `Bearer ${CONFIG.GITHUB_TOKEN}`,
+      Accept: 'application/vnd.github+json',
+      'Content-Type': 'application/json',
+    };
+  }
+
+  async function loadHistory() {
+    const res = await gmRequest({ method: 'GET', url: githubApiUrl(), headers: githubHeaders() });
+    if (res.status !== 200) {
+      throw new Error(`GET data.json mislukt: ${res.status} ${res.statusText}`);
+    }
+    const body = JSON.parse(res.responseText);
+    const history = JSON.parse(decodeURIComponent(escape(atob(body.content))));
+    return { history, sha: body.sha };
+  }
+
+  async function saveHistory(history, sha) {
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(history, null, 2))));
     const res = await gmRequest({
-      method: 'POST',
-      url: CONFIG.REPORT_URL,
-      headers: {
-        Authorization: `Bearer ${CONFIG.REPORT_SECRET}`,
-        'Content-Type': 'application/json',
-      },
-      data: JSON.stringify(point),
+      method: 'PUT',
+      url: githubApiUrl(),
+      headers: githubHeaders(),
+      data: JSON.stringify({
+        message: 'Update ticket price data (tampermonkey)',
+        content,
+        sha,
+      }),
     });
     if (res.status !== 200) {
-      throw new Error(`Report mislukt: ${res.status} ${res.statusText} - ${res.responseText}`);
+      throw new Error(`PUT data.json mislukt: ${res.status} ${res.statusText} - ${res.responseText}`);
     }
   }
 
   async function main() {
-    if (CONFIG.REPORT_SECRET === 'PLAK_HIER_JE_SECRET') {
-      showBadge('Lowlands reporter: geen secret ingesteld', '#b91c1c');
-      log('REPORT_SECRET niet ingesteld in de userscript-config, stop.');
+    if (CONFIG.GITHUB_TOKEN === 'PLAK_HIER_JE_GITHUB_TOKEN') {
+      showBadge('Lowlands reporter: geen GitHub-token ingesteld', '#b91c1c');
+      log('GITHUB_TOKEN niet ingesteld in de userscript-config, stop.');
       return;
     }
 
@@ -165,14 +212,29 @@
     log(`Meting: ${JSON.stringify(point)}`);
 
     try {
-      showBadge('Lowlands reporter: bezig met versturen...', '#2563eb');
-      await reportPoint(point);
+      showBadge('Lowlands reporter: bezig met opslaan...', '#2563eb');
+      const { history, sha } = await loadHistory();
+      history.points = history.points || [];
+      history.points.push(point);
+      if (history.points.length > CONFIG.MAX_HISTORY_POINTS) {
+        history.points = history.points.slice(-CONFIG.MAX_HISTORY_POINTS);
+      }
+
+      if (point.lowest !== null && point.lowest <= CONFIG.PRICE_THRESHOLD) {
+        const last = history.lastNotifiedPrice;
+        if (last === null || last === undefined || point.lowest < last) {
+          await sendNtfyNotification(point.lowest);
+          history.lastNotifiedPrice = point.lowest;
+        }
+      }
+
+      await saveHistory(history, sha);
       GM_setValue('lastReportTime', Date.now());
-      showBadge(`Lowlands reporter: verstuurd (${point.totalListings} listings)`, '#16a34a');
-      log('Meting verstuurd naar Festileaks.');
+      showBadge(`Lowlands reporter: opgeslagen (${point.totalListings} listings)`, '#16a34a');
+      log('data.json bijgewerkt via GitHub API.');
     } catch (err) {
       showBadge('Lowlands reporter: fout, zie console', '#b91c1c');
-      log('Fout bij versturen: ' + err.message);
+      log('Fout bij bijwerken data.json: ' + err.message);
     }
   }
 
